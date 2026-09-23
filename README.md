@@ -29,23 +29,26 @@ deliberately no theme toggle - see "Dark mode" in `docs/customising.md`.
 
 ## Install
 
+Either copy the directory, or install the JAR. Both work; they differ in how
+you keep track of what is deployed.
+
 ```bash
-# 1. build
+# A. copy the directory - no JAR, no kc.sh build, no restart
+cp -r theme/eduide /opt/keycloak/themes/eduide
+
+# B. the provider JAR - one versioned file, needs a rebuild
 ./scripts/build-jar.sh 1.0.0
-
-# 2. drop it in, on the Keycloak host
 cp dist/eduide-keycloak-theme-1.0.0.jar /opt/keycloak/providers/
-
-# 3. a new provider JAR needs a rebuild - an --optimized image will NOT
-#    pick the theme up without this
-/opt/keycloak/bin/kc.sh build
-
-# 4. restart Keycloak, then in the admin console:
-#    Realm settings -> Themes -> Login theme: eduide, Email theme: eduide
+/opt/keycloak/bin/kc.sh build      # an --optimized image ignores the JAR without this
 ```
 
-Then enable consent and apply your own statement. `docs/deployment.md` has the
-full checklist, the verification command and how to roll back.
+Then restart if you used B, and in the admin console set
+**Realm settings -> Themes -> Login theme: `eduide`**, Email theme `eduide`.
+
+A copied directory does not survive a container restart unless it is mounted,
+and carries no version; the JAR is the one to hand to someone who operates the
+Keycloak for you. `docs/deployment.md` compares them properly, and has the realm
+checklist, the verification command and how to roll back.
 
 ## Replacing the data protection statement
 

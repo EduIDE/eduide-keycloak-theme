@@ -1,7 +1,8 @@
 # AGENTS.md - eduide-keycloak-theme
 
-The Keycloak login and email theme for EduIDE. One JAR, dropped into a Keycloak
-someone else runs. No server, no realm, no Java.
+The Keycloak login and email theme for EduIDE, dropped into a Keycloak someone
+else runs - either as a copied directory or as a provider JAR. No server, no
+realm, no Java.
 
 `CLAUDE.md` is a symlink to this file, so every agent reads the same thing.
 
@@ -19,8 +20,14 @@ docs/                           deployment, customising, development
 
 **The repo root is the JAR's internal layout.** That is why `META-INF/` and
 `theme/` sit at the top level: the build is one `zip` of those two directories,
-with no staging step, and `docker-compose.yml` bind-mounts `theme/eduide`
-straight into a container.
+with no staging step.
+
+The same layout serves the other install route for free. `theme/eduide` maps
+one-to-one onto `/opt/keycloak/themes/eduide`, which is a complete install on
+its own - no JAR, no `META-INF`, no `kc.sh build`, no restart, verified in
+production mode. That is exactly what `docker-compose.yml` bind-mounts, so the
+dev stack exercises the directory route and `--profile jar` exercises the JAR
+route.
 
 ## Commands
 
@@ -137,6 +144,19 @@ done | grep -oE 'properties\.kc[A-Za-z0-9_-]+' | sed 's/properties\.//' | sort -
 Keycloak served `resources/<hash>/login/eduide` with the stylesheet, fonts and
 favicon all returning 200. CI does not re-check this; redo it by hand if the
 build script changes.
+
+**A copied directory needs no JAR and no build.** Verified on Keycloak 26.4 in
+**production** mode (`start`, `Profile prod activated`): copying `theme/eduide`
+to `/opt/keycloak/themes/eduide` made the theme appear in the server-info theme
+list with no `kc.sh build` and no restart, rendered correctly, and picked up
+later `.ftl` and `.css` edits on the next request. The trade-off is that the
+copy has no version stamp and does not survive a container restart unless it is
+mounted - see `docs/deployment.md`.
+
+**Theme resources are cached by the browser for 30 days**, under a path keyed to
+Keycloak's own resource version, which does not change when the theme changes.
+An in-place CSS or template update therefore reaches returning users only as
+their caches expire. True of both install routes.
 
 ## Conventions
 
