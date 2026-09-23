@@ -1,0 +1,181 @@
+{
+  "realm": "eduide-dev-regterms",
+  "enabled": true,
+  "displayName": "EduIDE (registration consent)",
+  "displayNameHtml": "EduIDE",
+  "loginTheme": "eduide",
+  "emailTheme": "eduide",
+  "accountTheme": "keycloak.v3",
+  "adminTheme": "keycloak.v2",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "verifyEmail": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "editUsernameAllowed": false,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "en",
+    "de"
+  ],
+  "defaultLocale": "en",
+  "attributes": {
+    "darkMode": "true"
+  },
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "noreply@eduide.localhost",
+    "fromDisplayName": "EduIDE",
+    "auth": "",
+    "ssl": "",
+    "starttls": ""
+  },
+  "requiredActions": [
+    {
+      "alias": "TERMS_AND_CONDITIONS",
+      "name": "Terms and Conditions",
+      "providerId": "TERMS_AND_CONDITIONS",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 20,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PROFILE",
+      "name": "Update Profile",
+      "providerId": "UPDATE_PROFILE",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 40,
+      "config": {}
+    },
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 10,
+      "config": {}
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "eduide-dev",
+      "name": "EduIDE (development)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "rootUrl": "http://127.0.0.1:8080",
+      "redirectUris": [
+        "http://127.0.0.1:8080/*",
+        "http://localhost:8080/*",
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "+"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "plain@example.com",
+      "email": "plain@example.com",
+      "firstName": "Plain",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ]
+    }
+  ],
+  "registrationFlow": "registration",
+  "authenticationFlows": [
+    {
+      "alias": "registration",
+      "description": "Registration flow",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": true,
+      "authenticationExecutions": [
+        {
+          "authenticator": "registration-page-form",
+          "flowAlias": "registration form",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorFlow": true,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "registration form",
+      "description": "Registration form",
+      "providerId": "form-flow",
+      "topLevel": false,
+      "builtIn": true,
+      "authenticationExecutions": [
+        {
+          "authenticator": "registration-user-creation",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "registration-password-action",
+          "requirement": "REQUIRED",
+          "priority": 50,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "registration-recaptcha-action",
+          "requirement": "DISABLED",
+          "priority": 60,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "registration-terms-and-conditions",
+          "requirement": "REQUIRED",
+          "priority": 70,
+          "userSetupAllowed": false,
+          "authenticatorFlow": false,
+          "autheticatorFlow": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1088 @@
+/*
+ * EduIDE Keycloak login theme.
+ *
+ * Section order is load-bearing - there is no build step, so the cascade is
+ * whatever this file says, in this order:
+ *
+ *   1. fonts      self-hosted Anonymous Pro
+ *   2. tokens     the only place colours are defined
+ *   3. reset      element defaults
+ *   4. chrome     page, card, header, footer
+ *   5. components form, input, button, check, alert, social, otp, authlist
+ *   6. icons      CSS-drawn, no icon font
+ *   7. inherited  literal class names Keycloak templates hardcode
+ *   8. per-page   body[data-page-id] tweaks
+ *
+ * Rebranding: change section 2 and resources/img/eduide-logo.svg, then rebuild.
+ * Nothing else in this file names a colour.
+ */
+
+/* ========================================================================== *
+ * 1. Fonts
+ * Anonymous Pro carries the wordmark, headings and buttons only. Body text,
+ * inputs and the privacy statement use a system sans - a multi-section legal
+ * document set in monospace is not readable.
+ * ========================================================================== */
+
+@font-face {
+    font-family: 'Anonymous Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Anonymous Pro'), url('../fonts/anonymous-pro-400-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+        U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+        U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Anonymous Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Anonymous Pro'), url('../fonts/anonymous-pro-400-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+        U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+        U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Anonymous Pro';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: local('Anonymous Pro Bold'), url('../fonts/anonymous-pro-700-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+        U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+        U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Anonymous Pro';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: local('Anonymous Pro Bold'), url('../fonts/anonymous-pro-700-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+        U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+        U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ========================================================================== *
+ * 2. Tokens
+ * Two teals on purpose: --eduide-accent is decorative (borders, stripes, focus
+ * rings) and --eduide-accent-ink is the text-safe variant. The brand teal
+ * #249EA0 only reaches ~2.8:1 against the light card, so it must never carry
+ * body text. Orange is decorative only for the same reason.
+ * ========================================================================== */
+
+:root {
+    --eduide-accent: #249ea0;
+    --eduide-accent-ink: #14696b;
+    --eduide-accent-warm: #f78104;
+
+    --eduide-btn-bg: #1b7a7c;
+    --eduide-btn-bg-hover: #14696b;
+    --eduide-btn-text: #ffffff;
+
+    --eduide-text: #1a1a1a;
+    --eduide-text-muted: rgba(26, 26, 26, 0.7);
+
+    --eduide-bg: #dbdbdb;
+    --eduide-bg-card: #f4f4f4;
+    --eduide-bg-sunken: #e8e8e8;
+
+    --eduide-border: rgba(0, 0, 0, 0.14);
+    --eduide-border-hover: rgba(0, 0, 0, 0.3);
+
+    --eduide-input-bg: #ffffff;
+
+    --eduide-error: #c22133;
+    --eduide-success: #2e7d32;
+    --eduide-warning: #8a5200;
+
+    --eduide-radius-card: 1rem;
+    --eduide-radius-input: 0.5rem;
+    --eduide-radius-pill: 10rem;
+
+    --eduide-font-brand: 'Anonymous Pro', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --eduide-font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu,
+        Cantarell, 'Helvetica Neue', Arial, sans-serif;
+
+    --eduide-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme='dark'] {
+    --eduide-accent: #3fc4c6;
+    --eduide-accent-ink: #5fd6d8;
+    --eduide-accent-warm: #ffa03d;
+
+    --eduide-btn-bg: #3fc4c6;
+    --eduide-btn-bg-hover: #5fd6d8;
+    --eduide-btn-text: #10242b;
+
+    --eduide-text: #ffffff;
+    --eduide-text-muted: rgba(255, 255, 255, 0.7);
+
+    --eduide-bg: #2a2a40;
+    --eduide-bg-card: rgba(30, 30, 50, 0.9);
+    --eduide-bg-sunken: rgba(12, 12, 24, 0.5);
+
+    --eduide-border: rgba(255, 255, 255, 0.14);
+    --eduide-border-hover: rgba(255, 255, 255, 0.3);
+
+    --eduide-input-bg: rgba(16, 16, 30, 0.6);
+
+    --eduide-error: #ff8080;
+    --eduide-success: #6bcf7f;
+    --eduide-warning: #ffb454;
+
+    --eduide-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* System preference, unless the document explicitly asked for light. Keycloak
+   runs on a different origin than the EduIDE app, so it cannot read the app's
+   stored theme choice - prefers-color-scheme is the only shared signal, and
+   that is why this theme ships no toggle. */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        --eduide-accent: #3fc4c6;
+        --eduide-accent-ink: #5fd6d8;
+        --eduide-accent-warm: #ffa03d;
+
+        --eduide-btn-bg: #3fc4c6;
+        --eduide-btn-bg-hover: #5fd6d8;
+        --eduide-btn-text: #10242b;
+
+        --eduide-text: #ffffff;
+        --eduide-text-muted: rgba(255, 255, 255, 0.7);
+
+        --eduide-bg: #2a2a40;
+        --eduide-bg-card: rgba(30, 30, 50, 0.9);
+        --eduide-bg-sunken: rgba(12, 12, 24, 0.5);
+
+        --eduide-border: rgba(255, 255, 255, 0.14);
+        --eduide-border-hover: rgba(255, 255, 255, 0.3);
+
+        --eduide-input-bg: rgba(16, 16, 30, 0.6);
+
+        --eduide-error: #ff8080;
+        --eduide-success: #6bcf7f;
+        --eduide-warning: #ffb454;
+
+        --eduide-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+}
+
+/* ========================================================================== *
+ * 3. Reset
+ * ========================================================================== */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+.eduide-html {
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+}
+
+.eduide-body {
+    margin: 0;
+    min-height: 100%;
+    font-family: var(--eduide-font-body);
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--eduide-text);
+    background-color: var(--eduide-bg);
+    background-image: radial-gradient(
+            ellipse 80% 60% at 50% -10%,
+            color-mix(in srgb, var(--eduide-accent) 22%, transparent),
+            transparent 70%
+        ),
+        radial-gradient(
+            ellipse 60% 50% at 100% 100%,
+            color-mix(in srgb, var(--eduide-accent-warm) 12%, transparent),
+            transparent 70%
+        );
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+img {
+    max-width: 100%;
+}
+
+a {
+    color: var(--eduide-accent-ink);
+    text-decoration: none;
+}
+
+a:hover,
+a:focus-visible {
+    text-decoration: underline;
+}
+
+/* One focus treatment everywhere. This is a login page; never remove it. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+    outline: 2px solid var(--eduide-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* ========================================================================== *
+ * 4. Page chrome
+ * ========================================================================== */
+
+.eduide-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 2rem 1rem;
+    gap: 1.25rem;
+}
+
+.eduide-page__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: center;
+}
+
+/* The logo is injected by template.ftl above the realm name. */
+.eduide-brand__logo {
+    display: block;
+    width: 64px;
+    height: auto;
+}
+
+.eduide-page__header-text {
+    font-family: var(--eduide-font-brand);
+    font-weight: 700;
+    font-size: 1.375rem;
+    letter-spacing: 0.02em;
+    color: var(--eduide-text);
+}
+
+.eduide-page__header-text :is(h1, h2, p) {
+    margin: 0;
+    font: inherit;
+}
+
+.eduide-card {
+    position: relative;
+    width: 100%;
+    max-width: 27.5rem;
+    padding: 2rem;
+    background: var(--eduide-bg-card);
+    border: 1px solid var(--eduide-border);
+    border-radius: var(--eduide-radius-card);
+    box-shadow: var(--eduide-shadow);
+    backdrop-filter: blur(5px);
+    overflow: hidden;
+}
+
+/* The 4px gradient stripe is the strongest visual tie to the landing page. */
+.eduide-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--eduide-accent), var(--eduide-accent-warm));
+}
+
+.eduide-card__header {
+    display: block;
+    margin-bottom: 1.5rem;
+}
+
+#kc-page-title {
+    margin: 0;
+    font-family: var(--eduide-font-brand);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--eduide-text);
+}
+
+.eduide-content {
+    display: block;
+}
+
+/* "* required fields" hint above the registration form. */
+.subtitle {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--eduide-text-muted);
+    text-align: right;
+}
+
+.required {
+    color: var(--eduide-error);
+}
+
+/* Attempted-username row, shown mid-flow on re-authentication. */
+#kc-username {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.9375rem;
+    color: var(--eduide-text-muted);
+}
+
+#kc-attempted-username {
+    font-weight: 600;
+    color: var(--eduide-text);
+}
+
+.kc-login-tooltip {
+    position: relative;
+    display: inline-flex;
+}
+
+.kc-tooltip-text {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 0.5rem);
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 14rem;
+    padding: 0.375rem 0.625rem;
+    background: var(--eduide-text);
+    color: var(--eduide-bg-card);
+    border-radius: var(--eduide-radius-input);
+    font-size: 0.75rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.kc-login-tooltip:hover .kc-tooltip-text,
+#reset-login:focus-visible .kc-tooltip-text {
+    opacity: 1;
+}
+
+/* Footer. Every link is message-driven and hidden when its URL key is empty,
+   so nothing here names an institution. */
+.eduide-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1rem;
+    max-width: 27.5rem;
+    font-size: 0.8125rem;
+    color: var(--eduide-text-muted);
+    text-align: center;
+}
+
+.eduide-footer a {
+    color: var(--eduide-text-muted);
+}
+
+.eduide-footer a:hover {
+    color: var(--eduide-accent-ink);
+}
+
+/* Locale switcher ---------------------------------------------------------- */
+
+.eduide-locale {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+}
+
+.eduide-locale__dropdown {
+    position: relative;
+}
+
+#kc-current-locale-link {
+    padding: 0.25rem 0.5rem;
+    background: none;
+    border: 1px solid var(--eduide-border);
+    border-radius: var(--eduide-radius-input);
+    color: var(--eduide-text-muted);
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+
+#kc-current-locale-link:hover {
+    border-color: var(--eduide-border-hover);
+    color: var(--eduide-text);
+}
+
+.eduide-locale__list {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.25rem);
+    z-index: 10;
+    display: none;
+    min-width: 8rem;
+    margin: 0;
+    padding: 0.25rem;
+    list-style: none;
+    background: var(--eduide-bg-card);
+    border: 1px solid var(--eduide-border);
+    border-radius: var(--eduide-radius-input);
+    box-shadow: var(--eduide-shadow);
+}
+
+/* menu-button-links.js toggles aria-expanded on the button. */
+#kc-current-locale-link[aria-expanded='true'] + .eduide-locale__list {
+    display: block;
+}
+
+.eduide-locale__link {
+    display: block;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.25rem;
+    color: var(--eduide-text);
+    font-size: 0.875rem;
+}
+
+.eduide-locale__link:hover,
+.eduide-locale__link:focus-visible {
+    background: var(--eduide-bg-sunken);
+    text-decoration: none;
+}
+
+/* ========================================================================== *
+ * 5. Components
+ * ========================================================================== */
+
+.eduide-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 0;
+}
+
+.eduide-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.eduide-label,
+.eduide-label-wrap label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--eduide-text);
+}
+
+.eduide-input {
+    width: 100%;
+    padding: 0.6875rem 0.875rem;
+    font-family: var(--eduide-font-body);
+    font-size: 1rem;
+    line-height: 1.4;
+    color: var(--eduide-text);
+    background: var(--eduide-input-bg);
+    border: 1px solid var(--eduide-border-hover);
+    border-radius: var(--eduide-radius-input);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.eduide-input::placeholder {
+    color: var(--eduide-text-muted);
+}
+
+.eduide-input:hover {
+    border-color: var(--eduide-accent);
+}
+
+.eduide-input:focus {
+    border-color: var(--eduide-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--eduide-accent) 25%, transparent);
+    outline: none;
+}
+
+.eduide-input[aria-invalid='true'] {
+    border-color: var(--eduide-error);
+}
+
+.eduide-input[aria-invalid='true']:focus {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--eduide-error) 25%, transparent);
+}
+
+.eduide-input--textarea {
+    min-height: 6rem;
+    resize: vertical;
+}
+
+.eduide-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Password field plus its visibility toggle. */
+.eduide-input-group {
+    display: flex;
+    align-items: stretch;
+    gap: 0.375rem;
+}
+
+.eduide-input-group .eduide-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.eduide-helper {
+    font-size: 0.8125rem;
+    color: var(--eduide-text-muted);
+}
+
+.eduide-error {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--eduide-error);
+}
+
+.eduide-form__options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.eduide-form__buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    margin-top: 0.25rem;
+}
+
+/* Buttons ------------------------------------------------------------------ */
+
+.eduide-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.75rem;
+    font-family: var(--eduide-font-brand);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    color: var(--eduide-text);
+    background: transparent;
+    border: 2px solid var(--eduide-border-hover);
+    border-radius: var(--eduide-radius-pill);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.eduide-btn:hover {
+    text-decoration: none;
+    border-color: var(--eduide-accent);
+}
+
+.eduide-btn--primary {
+    color: var(--eduide-btn-text);
+    background: var(--eduide-btn-bg);
+    border-color: var(--eduide-btn-bg);
+}
+
+.eduide-btn--primary:hover {
+    background: var(--eduide-btn-bg-hover);
+    border-color: var(--eduide-btn-bg-hover);
+    color: var(--eduide-btn-text);
+}
+
+.eduide-btn--secondary {
+    color: var(--eduide-text);
+    background: transparent;
+}
+
+.eduide-btn--secondary:hover {
+    background: var(--eduide-bg-sunken);
+}
+
+.eduide-btn--block {
+    width: 100%;
+}
+
+.eduide-btn:disabled,
+.eduide-btn.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Icon-only button, used by the password visibility toggle. */
+.eduide-btn--icon {
+    flex: 0 0 auto;
+    padding: 0 0.75rem;
+    border-radius: var(--eduide-radius-input);
+    border-color: var(--eduide-border-hover);
+}
+
+/* Checkboxes and radios ---------------------------------------------------- */
+
+.eduide-check {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 0.625rem;
+}
+
+.eduide-check__input {
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0.1875rem 0 0;
+    flex: 0 0 auto;
+    accent-color: var(--eduide-accent);
+    cursor: pointer;
+}
+
+.eduide-check__input[aria-invalid='true'] {
+    outline: 2px solid var(--eduide-error);
+    outline-offset: 2px;
+}
+
+.eduide-check__label,
+.eduide-check label {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--eduide-text);
+    cursor: pointer;
+}
+
+.eduide-check .is-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Alerts ------------------------------------------------------------------- */
+
+.eduide-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    margin-bottom: 1.25rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--eduide-border);
+    border-left: 4px solid var(--eduide-text-muted);
+    border-radius: var(--eduide-radius-input);
+    background: var(--eduide-bg-sunken);
+    font-size: 0.9375rem;
+}
+
+.eduide-alert__title {
+    flex: 1 1 auto;
+}
+
+.eduide-alert a {
+    text-decoration: underline;
+}
+
+.alert-error,
+.pf-m-danger {
+    border-left-color: var(--eduide-error);
+}
+
+.alert-warning,
+.pf-m-warning {
+    border-left-color: var(--eduide-warning);
+}
+
+.alert-success,
+.pf-m-success {
+    border-left-color: var(--eduide-success);
+}
+
+.alert-info,
+.pf-m-info {
+    border-left-color: var(--eduide-accent);
+}
+
+.pf-c-alert__icon {
+    flex: 0 0 auto;
+    line-height: 1.5;
+}
+
+/* Registration / info link under the card body. */
+.eduide-signup {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--eduide-border);
+    font-size: 0.9375rem;
+    text-align: center;
+    color: var(--eduide-text-muted);
+}
+
+.eduide-info {
+    display: block;
+}
+
+.eduide-mt {
+    margin-top: 1rem;
+}
+
+/* Identity providers ------------------------------------------------------- */
+
+.eduide-social {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--eduide-border);
+}
+
+.eduide-social__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.eduide-social__list--grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.eduide-social__grid-item {
+    display: block;
+}
+
+.eduide-social__name {
+    font-family: var(--eduide-font-brand);
+}
+
+/* select-authenticator.ftl ------------------------------------------------- */
+
+.eduide-authlist {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.eduide-authlist__item {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    width: 100%;
+    padding: 0.875rem 1rem;
+    text-align: left;
+    color: var(--eduide-text);
+    background: var(--eduide-bg-sunken);
+    border: 1px solid var(--eduide-border);
+    border-radius: var(--eduide-radius-input);
+    cursor: pointer;
+}
+
+.eduide-authlist__item:hover {
+    border-color: var(--eduide-accent);
+    text-decoration: none;
+}
+
+.eduide-authlist__body {
+    flex: 1 1 auto;
+}
+
+.eduide-authlist__heading,
+.eduide-authlist__title {
+    font-weight: 600;
+}
+
+.eduide-authlist__desc {
+    font-size: 0.8125rem;
+    color: var(--eduide-text-muted);
+}
+
+.eduide-authlist__fill {
+    flex: 1 1 auto;
+}
+
+/* OTP and recovery codes --------------------------------------------------- */
+
+.eduide-otp {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.eduide-otp__header {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.eduide-otp__title {
+    font-weight: 600;
+}
+
+.eduide-codes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: 0.5rem;
+    margin: 1rem 0;
+    padding: 1rem;
+    font-family: var(--eduide-font-brand);
+    background: var(--eduide-bg-sunken);
+    border-radius: var(--eduide-radius-input);
+    list-style: none;
+}
+
+.eduide-codes__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+}
+
+/* ========================================================================== *
+ * 6. Icons
+ * Drawn in CSS so the theme ships no icon font and no sprite. Keycloak writes
+ * these class names onto empty <i>/<span> elements.
+ * ========================================================================== */
+
+.eduide-icon {
+    display: inline-block;
+    width: 1.125rem;
+    height: 1.125rem;
+    flex: 0 0 auto;
+    background-color: currentColor;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    vertical-align: text-bottom;
+}
+
+.eduide-icon--eye {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+}
+
+.eduide-icon--eye-off {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'/%3E%3Cline x1='1' y1='1' x2='23' y2='23'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'/%3E%3Cline x1='1' y1='1' x2='23' y2='23'/%3E%3C/svg%3E");
+}
+
+.eduide-icon--restart {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='1 4 1 10 7 10'/%3E%3Cpath d='M3.51 15a9 9 0 1 0 2.13-9.36L1 10'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='1 4 1 10 7 10'/%3E%3Cpath d='M3.51 15a9 9 0 1 0 2.13-9.36L1 10'/%3E%3C/svg%3E");
+}
+
+.eduide-icon--key {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 2l-2 2m-3.5 3.5L19 4m-3.5 3.5a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 2l-2 2m-3.5 3.5L19 4m-3.5 3.5a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78z'/%3E%3C/svg%3E");
+}
+
+.eduide-icon--mobile {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='2' width='14' height='20' rx='2'/%3E%3Cline x1='12' y1='18' x2='12.01' y2='18'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='2' width='14' height='20' rx='2'/%3E%3Cline x1='12' y1='18' x2='12.01' y2='18'/%3E%3C/svg%3E");
+}
+
+.eduide-icon--chevron {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E");
+}
+
+.eduide-icon--error,
+.eduide-icon--warning,
+.eduide-icon--success,
+.eduide-icon--info {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='13'/%3E%3Cline x1='12' y1='16' x2='12.01' y2='16'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='13'/%3E%3Cline x1='12' y1='16' x2='12.01' y2='16'/%3E%3C/svg%3E");
+}
+
+.eduide-icon--error { color: var(--eduide-error); }
+.eduide-icon--warning { color: var(--eduide-warning); }
+.eduide-icon--success { color: var(--eduide-success); }
+.eduide-icon--info { color: var(--eduide-accent-ink); }
+
+/* ========================================================================== *
+ * 7. Class names Keycloak hardcodes
+ * These appear as string literals in inherited templates with no property
+ * indirection, so they are part of the contract whether we like it or not.
+ * ========================================================================== */
+
+.instruction {
+    margin-bottom: 1rem;
+    color: var(--eduide-text-muted);
+}
+
+#kc-info-message,
+#kc-error-message {
+    text-align: center;
+}
+
+#kc-info-message p,
+#kc-error-message p {
+    margin: 0 0 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.clearfix::after {
+    content: '';
+    display: table;
+    clear: both;
+}
+
+#kc-form-options {
+    font-size: 0.875rem;
+}
+
+#kc-registration,
+#kc-registration-container {
+    text-align: center;
+}
+
+/* Keycloak's own markup nests a <div class="col-md-10"> inside the required
+   fields header; it carries no styling of ours beyond being a block. */
+.col-md-10 {
+    display: block;
+}
+
+/* ========================================================================== *
+ * 8. Consent and per-page
+ * ========================================================================== */
+
+/* The scrollable privacy statement. #kc-registration-terms-text is emitted by
+   the stock register-commons.ftl macro, #kc-terms-text by our terms.ftl - so
+   the in-form checkbox is styled without overriding register.ftl at all. */
+#kc-terms-text,
+#kc-registration-terms-text {
+    max-height: 16rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin-bottom: 1rem;
+    padding: 1rem 1.125rem;
+    background: var(--eduide-bg-sunken);
+    border: 1px solid var(--eduide-border);
+    border-radius: var(--eduide-radius-input);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--eduide-text);
+}
+
+#kc-terms-text > :first-child,
+#kc-registration-terms-text > :first-child {
+    margin-top: 0;
+}
+
+#kc-terms-text > :last-child,
+#kc-registration-terms-text > :last-child {
+    margin-bottom: 0;
+}
+
+#kc-terms-text h2,
+#kc-registration-terms-text h2 {
+    margin: 1.25rem 0 0.375rem;
+    font-family: var(--eduide-font-brand);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--eduide-accent-ink);
+}
+
+#kc-terms-text ul,
+#kc-registration-terms-text ul {
+    margin: 0.375rem 0;
+    padding-left: 1.25rem;
+}
+
+/* The terms page is a reading page: give it more room than a login form. */
+body[data-page-id='login-terms'] .eduide-card,
+body[data-page-id='login-register'] .eduide-card {
+    max-width: 34rem;
+}
+
+.eduide-terms__consent {
+    margin-bottom: 1.25rem;
+    padding: 0.875rem 1rem;
+    background: var(--eduide-bg-sunken);
+    border: 1px solid var(--eduide-border);
+    border-radius: var(--eduide-radius-input);
+}
+
+.eduide-terms__consent .eduide-helper {
+    grid-column: 2;
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 30rem) {
+    .eduide-page {
+        padding: 1.25rem 0.75rem;
+    }
+
+    .eduide-card {
+        padding: 1.5rem 1.25rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
+
+/* The stock register-commons.ftl termsAcceptance macro nests the consent
+   checkbox and its label inside kcLabelWrapperClass rather than a check
+   wrapper, so give that case the same row layout. Degrades to block where
+   :has() is unsupported, which is still usable. */
+.eduide-label-wrap:has(> input[type='checkbox']) {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+}
+
+.eduide-label-wrap > input[type='checkbox'] {
+    margin-top: 0.1875rem;
+}

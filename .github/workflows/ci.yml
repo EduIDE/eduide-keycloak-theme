@@ -1,0 +1,46 @@
+# The three lint scripts, and nothing else.
+#
+# There is deliberately no smoke job: nothing here boots Keycloak, so a change
+# that renders a broken page still goes green. The compensating control is
+# `docker compose up` during development, documented in docs/development.md.
+#
+# dependency-review is not used either - it needs a dependency manifest, and
+# this repo has none. That is a deliberate omission, not an oversight.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    env:
+      # check-*.sh read Keycloak's base theme from GitHub to compare against.
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fails if upstream starts using a kc* class hook theme.properties does
+      # not define. That is the whole reason a parent=base theme stays safe
+      # across Keycloak upgrades.
+      - name: Theme structure and upstream drift
+        run: ./scripts/check-theme.sh
+
+      # msg("typo") renders the literal key with no warning anywhere, so a
+      # missing key is invisible without this.
+      - name: Message bundles
+        run: ./scripts/check-messages.sh
+
+      - name: AGENTS.md does not reference missing paths
+        run: ./scripts/check-agents-md.sh
+
+      - name: Theme JAR builds
+        run: ./scripts/build-jar.sh ci

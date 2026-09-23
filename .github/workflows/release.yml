@@ -1,0 +1,44 @@
+# Build the theme JAR and attach it to the release.
+#
+# The JAR is the only artifact this repo ships. It is a plain zip of META-INF/
+# and theme/ - see scripts/build-jar.sh for why that is sufficient.
+
+name: Release
+
+on:
+  release:
+    types: [published, prereleased]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to build, without the leading v
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  jar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        id: build
+        run: |
+          set -euo pipefail
+          VERSION="${{ github.event.inputs.version || github.event.release.tag_name }}"
+          JAR="$(./scripts/build-jar.sh "$VERSION")"
+          ( cd "$(dirname "$JAR")" && sha256sum "$(basename "$JAR")" > "$(basename "$JAR").sha256" )
+          echo "jar=$JAR" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: theme-jar
+          path: dist/*
+
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber

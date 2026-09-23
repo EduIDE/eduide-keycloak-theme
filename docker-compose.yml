@@ -1,0 +1,67 @@
+# Local development stack for the EduIDE Keycloak theme.
+# Test tooling - not shipped in the JAR, not a deployment reference.
+#
+#   docker compose up                 theme bind-mounted, edits live on refresh
+#   docker compose --profile jar up    the built JAR in providers/, as deployed
+#
+# Ports bind 127.0.0.1 explicitly: OrbStack does not publish to localhost by
+# itself, and an unqualified mapping would also expose Keycloak on the LAN.
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    container_name: eduide-keycloak-dev
+    command:
+      - start-dev
+      - --import-realm
+      # All three caches off, so .ftl and .css edits show on refresh.
+      # NEVER set these in production.
+      - --spi-theme-cache-themes=false
+      - --spi-theme-cache-templates=false
+      - --spi-theme-static-max-age=-1
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./theme/eduide:/opt/keycloak/themes/eduide:ro
+      - ./dev/realm-eduide.json:/opt/keycloak/data/import/realm-eduide.json:ro
+      - ./dev/realm-eduide-registration-terms.json:/opt/keycloak/data/import/realm-eduide-registration-terms.json:ro
+    depends_on:
+      - mailpit
+
+  # Same Keycloak, but loading the theme the way a real deployment does: as a
+  # provider JAR rather than a directory. Run ./scripts/build-jar.sh first.
+  # This is what proves a plain `zip` archive is a loadable theme provider,
+  # since CI does not boot Keycloak.
+  keycloak-jar:
+    profiles: ["jar"]
+    image: quay.io/keycloak/keycloak:26.4
+    container_name: eduide-keycloak-jar
+    command:
+      - start-dev
+      - --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - ./dist:/opt/keycloak/providers:ro
+      - ./dev/realm-eduide.json:/opt/keycloak/data/import/realm-eduide.json:ro
+    depends_on:
+      - mailpit
+
+  # Without an SMTP sink there is no way to reach login-verify-email.ftl,
+  # login-reset-password.ftl or the branded emails at all.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: eduide-mailpit-dev
+    ports:
+      - "127.0.0.1:8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
