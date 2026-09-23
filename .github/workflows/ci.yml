@@ -26,7 +26,7 @@ jobs:
       # check-*.sh read Keycloak's base theme from GitHub to compare against.
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Fails if upstream starts using a kc* class hook theme.properties does
       # not define. That is the whole reason a parent=base theme stays safe
