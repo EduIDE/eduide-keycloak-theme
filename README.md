@@ -29,26 +29,31 @@ deliberately no theme toggle - see "Dark mode" in `docs/customising.md`.
 
 ## Install
 
-Either copy the directory, or install the JAR. Both work; they differ in how
-you keep track of what is deployed.
+Three routes, compared properly in `docs/deployment.md`. **Check first whether
+your Keycloak image is built with `--optimized`** - it rules one of them out.
 
 ```bash
-# A. copy the directory - no JAR, no kc.sh build, no restart
+# A. copy the directory - no JAR, no kc.sh build, no restart.
+#    Does not survive a container restart; use it to try the theme out.
 cp -r theme/eduide /opt/keycloak/themes/eduide
 
-# B. the provider JAR - one versioned file, needs a rebuild
+# B. the provider JAR - one versioned file, but kc.sh build is mandatory.
+#    On an --optimized image a JAR without a rebuild makes Keycloak REFUSE
+#    TO START, so bake both lines into the image.
 ./scripts/build-jar.sh 1.0.0
 cp dist/eduide-keycloak-theme-1.0.0.jar /opt/keycloak/providers/
-/opt/keycloak/bin/kc.sh build      # an --optimized image ignores the JAR without this
+/opt/keycloak/bin/kc.sh build
+
+# C. unpack the release JAR into the themes directory - the Kubernetes answer.
+#    Versioned like B, installs like A: no rebuild, works on --optimized.
+unzip -o eduide-keycloak-theme-1.0.0.jar "theme/*" -d /tmp/x
+cp -r /tmp/x/theme/. /opt/keycloak/themes/
 ```
 
-Then restart if you used B, and in the admin console set
-**Realm settings -> Themes -> Login theme: `eduide`**, Email theme `eduide`.
-
-A copied directory does not survive a container restart unless it is mounted,
-and carries no version; the JAR is the one to hand to someone who operates the
-Keycloak for you. `docs/deployment.md` compares them properly, and has the realm
-checklist, the verification command and how to roll back.
+Then in the admin console set **Realm settings -> Themes -> Login theme:
+`eduide`**, and Email theme `eduide`. `docs/deployment.md` has the init-container
+manifest for route C, the realm checklist, the verification command and how to
+roll back.
 
 ## Replacing the data protection statement
 

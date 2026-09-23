@@ -15,10 +15,26 @@ Requires Keycloak **26.0 or newer**.
 
 ## 1. Install the theme
 
-Two ways. Both are supported by Keycloak and both are verified against 26.4;
-pick on how your Keycloak is operated, not on which looks cleaner.
+Three routes. All verified against Keycloak 26.4 in **production** mode, and
+one of them is ruled out entirely if your image is built with `--optimized`, so
+read that part before choosing.
 
-### Option A - copy the directory (no JAR, no build step)
+### The `--optimized` question decides this
+
+If your Keycloak image was built with `kc.sh build` and is started with
+`--optimized` - which is the recommended production setup and what most
+container deployments do - then:
+
+| Route | On an `--optimized` image |
+|---|---|
+| Provider JAR dropped into `providers/` | **Keycloak refuses to start.** Exit code 2, `A provider JAR was updated since the last build, please rebuild for this to be fully utilized.` |
+| Theme directory under `themes/` | Works. No rebuild, no restart needed. |
+
+That is not a silent degradation - the server goes down. A provider JAR on an
+optimized image is only safe if you also rebuild the image. The themes
+directory is read at runtime and is unaffected by augmentation.
+
+### Option A - copy the directory
 
 Keycloak reads themes straight out of `/opt/keycloak/themes/`. The contents of
 `theme/` in this repo map one-to-one onto it, so installing is a copy of a
@@ -31,58 +47,102 @@ cp -r theme/eduide /opt/keycloak/themes/eduide
 That is the whole install. No JAR, no `META-INF/keycloak-themes.json`, **no
 `kc.sh build`, and no restart** - the theme appears in the Themes dropdown
 immediately, and later edits to `.ftl` and `.css` files are picked up on the
-next request. All of that was verified on a Keycloak 26.4 running in production
-mode, not inferred from dev mode.
+next request.
 
-The catch is persistence, and it is the thing that actually bites. A copy into
-a running container lives in the container filesystem and **is gone on the next
-restart**. So on Kubernetes this only works as a real install if the directory
-is mounted, typically from a ConfigMap:
-
-- the theme is 18 files, 168 KB, which fits a ConfigMap
-- but five of them are binary - four `.woff2` and `favicon.ico` - so they must
-  go in `binaryData` as base64, not `data`
-- and there is no version stamp anywhere, so `kubectl` cannot tell you which
-  build of the theme is live
-
-Use Option A when you have shell or volume access to the Keycloak and want the
-shortest path, or while iterating on a staging instance.
+The catch is persistence. A copy into a running container lives in the
+container filesystem and **is gone on the next restart**, so this is a way to
+try the theme out, not a way to install it. For a real install the directory
+has to come from somewhere that outlives the container - see Option C.
 
 ### Option B - the provider JAR
 
 ```bash
 ./scripts/build-jar.sh 1.0.0
 cp dist/eduide-keycloak-theme-1.0.0.jar /opt/keycloak/providers/
-/opt/keycloak/bin/kc.sh build          # required; see below
+/opt/keycloak/bin/kc.sh build
 ```
 
 Then restart Keycloak.
 
-**The rebuild is the step that gets missed.** A container started with
-`--optimized` will **not** pick up a new provider JAR until it is rebuilt - the
-server starts cleanly, logs nothing unusual, and the theme simply does not
-appear.
+The rebuild is mandatory, not advisory - see the table above. In exchange you
+get one file with a version in its name, so what is deployed is identifiable
+and a rollback is a file swap.
 
-In exchange you get one file with a version in its name, so what is deployed is
-identifiable and a rollback is a file swap. Bake it into the Keycloak image
-with `COPY eduide-keycloak-theme-<version>.jar /opt/keycloak/providers/`, or
-mount it from a volume.
+This is the right route when the Keycloak image is built in CI and you can add
+a line to it:
 
-Use Option B when someone else operates the Keycloak, when the image is built
-in CI, or whenever "which version is live?" needs an answer.
+```dockerfile
+COPY eduide-keycloak-theme-1.0.0.jar /opt/keycloak/providers/
+RUN /opt/keycloak/bin/kc.sh build
+```
+
+### Option C - unpack the release JAR into the themes directory
+
+This is the one to use on Kubernetes, and the one to ask for if someone else
+operates the Keycloak and does not want to rebuild their image. It takes the
+versioned artifact from Option B and installs it the way Option A does, so it
+needs no `kc.sh build`, works on an `--optimized` image, and still has a
+version you can point at.
+
+The release JAR is a plain zip, so unpacking `theme/` out of it is all that
+happens:
+
+```bash
+unzip -o "eduide-keycloak-theme-1.0.0.jar" "theme/*" -d /tmp/x
+cp -r /tmp/x/theme/. /opt/keycloak/themes/
+```
+
+As a Kubernetes init container writing into a volume that Keycloak mounts at
+`/opt/keycloak/themes`:
+
+```yaml
+spec:
+  volumes:
+    - name: themes
+      emptyDir: {}
+  initContainers:
+    - name: fetch-eduide-theme
+      image: alpine:3
+      command: ["/bin/sh", "-c"]
+      args:
+        - |
+          set -eu
+          apk add --no-cache unzip curl
+          curl -fsSL -o /tmp/theme.jar \
+            https://github.com/EduIDE/eduide-keycloak-theme/releases/download/v1.0.0/eduide-keycloak-theme-1.0.0.jar
+          unzip -o -q /tmp/theme.jar "theme/*" -d /tmp/x
+          cp -r /tmp/x/theme/. /themes/
+      volumeMounts:
+        - name: themes
+          mountPath: /themes
+  containers:
+    - name: keycloak
+      # unchanged, including --optimized
+      volumeMounts:
+        - name: themes
+          mountPath: /opt/keycloak/themes
+          readOnly: true
+```
+
+Pin the release tag, and the version that is live is whatever that URL says.
+The init container re-runs on every pod start, so the theme survives restarts
+and reschedules without any writable volume.
+
+A ConfigMap works too, but is worse here: the theme is 18 files and five of
+them are binary - four `.woff2` and `favicon.ico` - so they have to go in
+`binaryData` as base64, and the result carries no version.
 
 ### Which to ask TUM for
 
-If EduIDE's realm lives on a Keycloak that TUM builds as an image, Option B is
-the one that fits their pipeline: a single versioned artifact from our releases
-page, added to their image. Option A asks them to carry 18 loose files with no
-version on them.
+Ask whether their Keycloak image is built with `--optimized`. If it is - and it
+probably is - then **Option C**: it needs no change to their image, no
+`kc.sh build`, and no restart beyond the normal rollout, while still pinning a
+release tag. Option B is equally good if they are willing to add two lines to
+their Dockerfile.
 
-If they would rather mount a directory, Option A is legitimate and cheaper for
-them - just be explicit that a theme update then has no version to point at, and
-agree how it is rolled back.
+Option A is for trying it out on a staging instance, not for production.
 
-### Browser caching applies to both
+### Browser caching applies to all three
 
 Theme resources are served with `Cache-Control: max-age=2592000` - 30 days -
 under a path like `/resources/<hash>/login/eduide/css/login.css`. That `<hash>`
@@ -90,11 +150,10 @@ is Keycloak's own resource version: **it does not change when the theme
 changes.** So updating the stylesheet in place leaves returning visitors on the
 old CSS until their cache expires.
 
-This is true of the JAR route as well; it is a property of Keycloak themes, not
-of how you installed one. In practice it means: change wording through realm
-localization overrides (step 4), which are not cached this way, and expect a
-CSS or template change to reach returning users gradually unless the Keycloak
-version also changed.
+This is a property of Keycloak themes, not of how you installed one. In
+practice: change wording through realm localization overrides (step 4), which
+are not cached this way, and expect a CSS or template change to reach returning
+users gradually unless the Keycloak version also changed.
 
 ## 2. Select the theme
 

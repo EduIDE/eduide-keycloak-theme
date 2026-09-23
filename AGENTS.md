@@ -149,9 +149,16 @@ build script changes.
 **production** mode (`start`, `Profile prod activated`): copying `theme/eduide`
 to `/opt/keycloak/themes/eduide` made the theme appear in the server-info theme
 list with no `kc.sh build` and no restart, rendered correctly, and picked up
-later `.ftl` and `.css` edits on the next request. The trade-off is that the
-copy has no version stamp and does not survive a container restart unless it is
-mounted - see `docs/deployment.md`.
+later `.ftl` and `.css` edits on the next request.
+
+**On an `--optimized` image a provider JAR is worse than useless: Keycloak
+refuses to start.** Verified by building an image with `kc.sh build`, starting
+it `--optimized`, and dropping the JAR into `providers/` - the container exits
+with code 2 and `A provider JAR was updated since the last build, please
+rebuild for this to be fully utilized`. The themes directory on the same image
+worked with no rebuild and no restart. This is why `docs/deployment.md`
+recommends unpacking the release JAR into `/opt/keycloak/themes/` on
+Kubernetes rather than putting it in `providers/`.
 
 **Theme resources are cached by the browser for 30 days**, under a path keyed to
 Keycloak's own resource version, which does not change when the theme changes.
