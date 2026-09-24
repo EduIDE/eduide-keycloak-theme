@@ -28,8 +28,22 @@ from the filename**: `<anything>.<locale>.json`.
 `deploy/localization/eduide-tum.en.json` and its German sibling are EduIDE's
 real statement and double as a worked example.
 
-You can do the same from the admin console under **Realm settings ->
-Localization -> Realm overrides**, one key at a time.
+### Or from the admin console
+
+No CLI needed. **Realm settings -> Localization -> Realm overrides ->
+Add translation**, then pick the language and enter the key and value. The value
+field takes HTML directly, so a whole statement pastes in as one block.
+
+Two things to know before you start:
+
+- **Internationalization must be on** and the language must be in **Supported
+  locales**, on the same Localization page. The overrides tab is organised by
+  language, so a language that is not enabled has nowhere to put the text.
+- **Changes are live immediately** - no restart and no cache flush. Save, reload
+  the consent page, and the new text is there. Verified on Keycloak 26.4.
+
+The script is the better route when the statement is long or you want it in git;
+the console is better for a one-line fix.
 
 ### Override every locale you have enabled
 

@@ -168,7 +168,9 @@ always the missing `kc.sh build`.
 ## 3. Configure the realm
 
 The theme renders what the realm asks for. These settings are what turn it into
-a working login, registration and consent experience.
+a working login, registration and consent experience. All of it is done in the
+admin console - nothing here needs the CLI. Menu labels below are Keycloak 26.4
+verbatim.
 
 | Where | Setting | Value |
 |---|---|---|
@@ -179,6 +181,35 @@ a working login, registration and consent experience.
 | Realm settings -> Email | SMTP | Configured, or no mail is sent at all |
 | Authentication -> Required actions | **Terms and Conditions** | Enabled, **Set as default action** on |
 | Authentication -> Flows -> registration -> registration form | Terms and conditions | **Disabled** |
+
+### Turning consent on, click by click
+
+1. **Authentication** in the left nav, then the **Required actions** tab.
+2. Find the row **Terms and Conditions**. Two toggles on it:
+   - **Enabled** - on. This makes the action available at all.
+   - **Set as default action** - on. This is the one that matters: it assigns
+     the action to every **newly created** user, so they consent at first login.
+3. Leave the registration form execution alone. To confirm it is off:
+   **Authentication -> Flows -> registration**, expand **registration form**,
+   and check the **Terms and conditions** row is set to **Disabled**.
+
+**Enabled without Set as default action** is a valid state and a useful one: the
+consent page then only appears for users you assign it to by hand. That is how
+you re-consent a subset of people.
+
+### Making existing users consent again
+
+*Set as default action* only affects users created after you switch it on. It
+does nothing for people who already have accounts. To put an existing user
+through the consent page:
+
+**Users -> pick the user -> Details -> Required user actions**, add
+**Terms and Conditions**, Save. They get the page at their next login.
+
+For everyone at once, script it over the Admin REST API - the console has no
+bulk edit. The same applies after the statement changes and you want fresh
+consent: clearing a user's `terms_and_conditions` attribute
+(**Users -> user -> Attributes**) is what makes the page appear again.
 
 ### Why consent is configured this way
 
@@ -217,7 +248,34 @@ has been published, and names no data controller - a statement naming the wrong
 controller would be worse. Replace it before real use.
 
 Your text goes in as realm localization overrides, which take precedence over
-the theme bundle, so this needs no rebuild and no fork:
+the theme bundle, so this needs no rebuild and no fork. Either from the admin
+console, or with the script.
+
+**From the admin console**, one key at a time:
+
+1. **Realm settings -> Localization**. Make sure **Internationalization** is on
+   and your languages are in **Supported locales** first - the override tab is
+   organised by language.
+2. Open the **Realm overrides** tab.
+3. **Add translation**. Pick the language, then enter the key and the value:
+
+   | Key | Value |
+   |---|---|
+   | `termsText` | your statement, as HTML |
+   | `termsTitle` | the page heading |
+   | `acceptTerms` | the checkbox label |
+   | `acceptTermsHelp` | the hint under the checkbox |
+   | `termsAcceptanceRequired` | the error when the box is not ticked |
+   | `footerPrivacyUrl`, `footerImprintUrl`, `footerHelpUrl` | footer links; each link is hidden while its URL is empty |
+
+4. Save, and reload the consent page. **The change is live immediately** - no
+   restart, no cache flush. Verified on 26.4.
+
+Repeat for every language in Supported locales. The value box takes HTML
+directly, so `termsText` is pasted in as one block of `<h2>`/`<p>`/`<ul>`.
+
+**With the script**, for a whole file at once - better when the statement is
+long or lives in git:
 
 ```bash
 ./scripts/apply-localization.sh <realm> \
@@ -240,10 +298,9 @@ and the escaping rules.
 
 ### Re-consent after the statement changes
 
-Removing the `terms_and_conditions` attribute from a user puts them back through
-the consent page on next login. To re-consent everyone, clear that attribute for
-all users, or add the `TERMS_AND_CONDITIONS` required action to them, via the
-Admin REST API.
+Covered under "Making existing users consent again" above: clear the
+`terms_and_conditions` attribute, or add the required action back to the users
+concerned.
 
 ## 5. Verify
 
