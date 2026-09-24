@@ -283,8 +283,11 @@ long or lives in git:
     deploy/localization/eduide-tum.de.json
 ```
 
-Those two files are EduIDE's statement for the TUM deployment; copy them, edit
-the text, and apply your own. The same mechanism sets the footer links
+`deploy/localization/` holds two ready-made variants for the TUM deployment -
+`eduide-tum-linked.*` (a short summary plus a link to the statement on the
+landing page) and `eduide-tum.*` (the full statement inline). Apply one, not
+both; `deploy/localization/README.md` compares them and notes that the URL is
+environment-specific. Copy either and edit to write your own. The same mechanism sets the footer links
 (`footerImprintUrl`, `footerPrivacyUrl`, `footerHelpUrl`) - each link is hidden
 while its URL is empty, so a realm that sets nothing gets a clean footer rather
 than dead links.

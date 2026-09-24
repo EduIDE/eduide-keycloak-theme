@@ -1,0 +1,11 @@
+{
+  "termsTitle": "Data protection",
+  "termsText": "<p>To use EduIDE we process a limited amount of personal data: your login details, your session and workspace information, and anonymous crash reports. Data stays within TUM infrastructure and is not passed on to third parties.</p><p>The full details are set out in our <a href=\"https://eduide.artemis.cit.tum.de/privacy\" target=\"_blank\">data protection statement</a>, which opens in a new tab.</p>",
+  "acceptTerms": "I have read the data protection statement and agree to the processing of my data",
+  "acceptTermsHelp": "You need to agree before you can use EduIDE.",
+  "termsAcceptanceRequired": "Please confirm that you have read the data protection statement.",
+  "footerImprintUrl": "https://eduide.artemis.cit.tum.de/imprint",
+  "footerImprintLabel": "Imprint",
+  "footerPrivacyUrl": "https://eduide.artemis.cit.tum.de/privacy",
+  "footerPrivacyLabel": "Privacy"
+}
