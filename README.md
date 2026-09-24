@@ -55,26 +55,95 @@ Then in the admin console set **Realm settings -> Themes -> Login theme:
 manifest for route C, the realm checklist, the verification command and how to
 roll back.
 
-## Replacing the data protection statement
+## Configure consent
+
+Two settings and one piece of text. All of it is done in the admin console -
+nothing here needs the CLI. Menu labels are Keycloak 26.4 verbatim.
+
+### 1. Switch the consent page on
+
+**Authentication -> Required actions**, row **Terms and Conditions**:
+
+| Toggle | Set to | Why |
+|---|---|---|
+| **Enabled** | on | Makes the action available at all |
+| **Set as default action** | on | Assigns it to every **newly created** user, so they consent at first login |
+
+Then leave the registration form alone. Confirm it is off under
+**Authentication -> Flows -> registration**, expand **registration form**, and
+check that **Terms and conditions** reads **Disabled**.
+
+**Do not enable both.** Keycloak has two consent surfaces and they do not know
+about each other: `RegistrationTermsAndConditions.success()` is an empty method
+upstream, so the registration checkbox records nothing and never satisfies the
+required action. A user who ticks the box while registering is then shown the
+consent page again immediately.
+
+The required action is the one to use because it is the only one that leaves a
+record - it writes the acceptance to the `terms_and_conditions` user attribute
+as epoch seconds, which is the artifact to point at if anyone asks when someone
+consented. The theme styles the in-form checkbox too, for deployments that
+prefer it; it is simply not enabled at the same time.
+
+### 2. Put your own statement in
 
 The text this theme ships is a **placeholder on purpose**. It names no data
 controller, because a statement naming the wrong one is worse than an obvious
 placeholder.
 
-Your own text goes in as Keycloak realm localization overrides, which take
-precedence over the theme bundle - so **no rebuild and no fork**:
+Your text goes in as realm localization overrides, which take precedence over
+the theme's own bundle - so **no rebuild and no fork**.
+
+**From the admin console:** *Realm settings -> Localization -> Realm overrides
+-> Add translation*. Enable **Internationalization** and add your languages to
+**Supported locales** first, on that same page, or there is nowhere to put the
+text. The value box takes HTML, so a whole statement pastes in as one block.
+Changes are live on the next request - no restart, no cache flush.
+
+| Key | What it is |
+|---|---|
+| `termsText` | the statement itself, as HTML |
+| `termsTitle` | the page heading |
+| `acceptTerms` | the checkbox label |
+| `acceptTermsHelp` | the hint under the checkbox |
+| `termsAcceptanceRequired` | the error shown when the box is not ticked |
+| `footerImprintUrl`, `footerPrivacyUrl`, `footerHelpUrl` | footer links, each hidden while its URL is empty |
+
+**Or from a file**, which is better when the statement is long or lives in git:
 
 ```bash
-./scripts/apply-localization.sh <realm> deploy/localization/eduide-tum.en.json \
-                                        deploy/localization/eduide-tum.de.json
+./scripts/apply-localization.sh <realm> deploy/localization/eduide-tum-linked.en.json \
+                                        deploy/localization/eduide-tum-linked.de.json
 ```
 
-Those two files are EduIDE's real statement for the TUM deployment, and double
-as a worked example of the format. Copy them, edit the text, apply.
+`deploy/localization/` ships two ready-made variants - one linking to a
+statement hosted elsewhere, one carrying the full text inline. Apply one, not
+both; `deploy/localization/README.md` compares them.
 
 **Override every locale your realm has enabled.** Keycloak resolves overrides
 per locale as `realm-de > theme-de > realm-en > theme-en`, so an English-only
-override still leaves German users reading this theme's German text.
+override still leaves German users reading this theme's German placeholder.
+
+### 3. Existing users, and re-consent
+
+*Set as default action* only affects users created **after** it is switched on.
+Accounts that already exist are untouched.
+
+- One user: **Users -> the user -> Details -> Required user actions**, add
+  **Terms and Conditions**, save. They get the page at their next login.
+- After the statement changes: clearing a user's `terms_and_conditions`
+  attribute (**Users -> the user -> Attributes**) makes the page appear again.
+- Everyone at once: script it over the Admin REST API. The console has no bulk
+  edit.
+
+### One limitation, stated plainly
+
+`TermsAndConditions.processAction()` accepts any POST that does not carry
+`cancel`, so the checkbox on the consent page is a usability gate rather than a
+server-side control - a crafted request can skip it. Enforcing it server-side
+would need a custom Java `RequiredActionProvider`, which this repo deliberately
+does not ship. The registration-form checkbox *is* server-enforced by its
+`validate()` method, which is the trade-off between the two surfaces.
 
 ## Develop
 
@@ -95,7 +164,8 @@ on refresh, and Mailpit catches outgoing mail at http://127.0.0.1:8025.
 
 | | |
 |---|---|
-| `docs/deployment.md` | installing, realm settings, verifying, rolling back |
+| `docs/deployment.md` | installing, the full realm checklist, verifying, rolling back |
 | `docs/customising.md` | changing the text, the colours and the logo |
+| `deploy/localization/README.md` | the two ready-made statements, and which to pick |
 | `docs/development.md` | the dev stack and every page to check |
 | `AGENTS.md` | how the theme is built, and the traps |
