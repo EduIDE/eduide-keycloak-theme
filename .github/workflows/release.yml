@@ -24,9 +24,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  jar:
-    name: Build the JAR
+  release:
+    name: Draft GitHub Release
+    permissions:
+      contents: write
+    uses: EduIDE/.github/.github/workflows/release.yml@main
+    with:
+      version: ${{ inputs.version }}
+      tag_prefix: "v"
+
+  assets:
+    name: Build and attach the JAR
+    needs: release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
 
@@ -38,38 +50,12 @@ jobs:
           JAR="$(./scripts/build-jar.sh "$VERSION")"
           ( cd "$(dirname "$JAR")" && sha256sum "$(basename "$JAR")" > "$(basename "$JAR").sha256" )
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: theme-jar
-          path: dist/*
-          if-no-files-found: error
-
-  release:
-    name: Tag and GitHub Release
-    needs: jar
-    permissions:
-      contents: write
-    uses: EduIDE/.github/.github/workflows/release.yml@main
-    with:
-      version: ${{ inputs.version }}
-      tag_prefix: "v"
-
-  assets:
-    name: Attach the JAR
-    needs: release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: theme-jar
-          path: dist
-
+      # The release is still a draft here, so --clobber only makes a rerun work.
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ needs.release.outputs.tag }}" dist/* --repo "$GITHUB_REPOSITORY"
+          TAG: ${{ needs.release.outputs.tag }}
+        run: gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
 
   verify:
     name: Verify
@@ -88,3 +74,13 @@ jobs:
           grep -qx "eduide-keycloak-theme-${VERSION}.jar.sha256" <<<"$assets"
           echo "## Released ${TAG}" >> "$GITHUB_STEP_SUMMARY"
           echo "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> "$GITHUB_STEP_SUMMARY"
+
+  # Last: publishing the draft creates the tag. Until here a failed job leaves
+  # a draft and no tag.
+  publish-release:
+    needs: [release, verify]
+    permissions:
+      contents: write
+    uses: EduIDE/.github/.github/workflows/release-publish.yml@main
+    with:
+      tag: ${{ needs.release.outputs.tag }}
