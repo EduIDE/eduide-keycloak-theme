@@ -61,6 +61,9 @@ jobs:
     name: Verify
     needs: [release, assets]
     runs-on: ubuntu-latest
+    permissions:
+      # The release is still a draft; reading a draft needs push access.
+      contents: write
     steps:
       - name: Check the published assets
         env:
