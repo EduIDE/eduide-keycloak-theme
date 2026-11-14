@@ -168,6 +168,7 @@ their caches expire. True of both install routes.
 ## Conventions
 
 - Git tags `vX.Y.Z`; the JAR filename carries the version without the `v`.
+- Releases are manual: `gh workflow run release.yml -R EduIDE/eduide-keycloak-theme -f version=X.Y.Z` after a release PR that moves the `CHANGELOG.md` entries under `## [X.Y.Z]`. Use the `release` skill. `-rc.N` versions make a prerelease and are how to test a build. A release created by hand triggers nothing.
 - 4-space indent in FTL, CSS and shell; 2 in JSON, YAML and Markdown.
 - `--eduide-` prefix for CSS custom properties, `eduide-` for class names.
 - Colours are defined **only** in section 2 of

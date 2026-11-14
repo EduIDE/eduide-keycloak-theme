@@ -1,44 +1,90 @@
-# Build the theme JAR and attach it to the release.
+# Manual release. The only way the theme releases.
 #
-# The JAR is the only artifact this repo ships. It is a plain zip of META-INF/
-# and theme/ - see scripts/build-jar.sh for why that is sufficient.
-
+#   gh workflow run release.yml -R EduIDE/eduide-keycloak-theme --ref main -f version=0.1.0
+#   gh workflow run release.yml -R EduIDE/eduide-keycloak-theme --ref my-branch -f version=0.1.0-rc.1
+#
+# Builds the theme JAR (a plain zip, see scripts/build-jar.sh) and attaches it
+# with its checksum to the GitHub Release. A release candidate (-rc.N) makes a
+# prerelease, which is how to test a build.
 name: Release
 
 on:
-  release:
-    types: [published, prereleased]
   workflow_dispatch:
     inputs:
       version:
-        description: Version to build, without the leading v
+        description: "Version without the leading v, e.g. 0.1.0, or 0.1.0-rc.1 for a prerelease"
         required: true
+        type: string
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   jar:
+    name: Build the JAR
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
       - name: Build
-        id: build
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          VERSION="${{ github.event.inputs.version || github.event.release.tag_name }}"
           JAR="$(./scripts/build-jar.sh "$VERSION")"
           ( cd "$(dirname "$JAR")" && sha256sum "$(basename "$JAR")" > "$(basename "$JAR").sha256" )
-          echo "jar=$JAR" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
         with:
           name: theme-jar
           path: dist/*
+          if-no-files-found: error
 
-      - name: Attach to the release
-        if: github.event_name == 'release'
+  release:
+    name: Tag and GitHub Release
+    needs: jar
+    permissions:
+      contents: write
+    uses: EduIDE/.github/.github/workflows/release.yml@main
+    with:
+      version: ${{ inputs.version }}
+      tag_prefix: "v"
+
+  assets:
+    name: Attach the JAR
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: theme-jar
+          path: dist
+
+      - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber
+        run: gh release upload "${{ needs.release.outputs.tag }}" dist/* --repo "$GITHUB_REPOSITORY"
+
+  verify:
+    name: Verify
+    needs: [release, assets]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the published assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release.outputs.tag }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          assets=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')
+          grep -qx "eduide-keycloak-theme-${VERSION}.jar" <<<"$assets"
+          grep -qx "eduide-keycloak-theme-${VERSION}.jar.sha256" <<<"$assets"
+          echo "## Released ${TAG}" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> "$GITHUB_STEP_SUMMARY"
