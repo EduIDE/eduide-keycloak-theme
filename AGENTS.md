@@ -175,3 +175,10 @@ their caches expire. True of both install routes.
   `theme/eduide/login/resources/css/login.css`. The email template is the one
   accepted duplication, because mail cannot load a stylesheet.
 - Section order in that stylesheet is load-bearing and documented in its header.
+
+## Terminology
+
+Use the terms of the [EduIDE glossary](https://eduide.github.io/Docs/glossary) in code, UI texts, docs, values and comments, in exactly the meaning it gives.
+Do not introduce synonyms (environment, instance, workspace, launch, lecturer, start page) for a term the glossary defines, and never write "frontend" or "backend".
+When a new term is needed or a term changes, update the glossary in `EduIDE/Docs` first.
+Most relevant here: installation (not deployment or tenant), admin (the person who runs it, never "operator"), student, landing page.
