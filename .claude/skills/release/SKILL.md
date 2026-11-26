@@ -118,7 +118,7 @@ Rules:
   pure CI, test and refactoring changes unless a user can notice them.
 - Keep existing per-entry conventions of this file (for example `[eduide]`
   prefixes in EduIDE-Helm, `**Security:**` markers).
-- Add `### Upgrade notes` when an operator has to do something beyond
+- Add `### Upgrade notes` when an admin has to do something beyond
   installing the new version.
 - If an earlier `-rc.N` of this version got a section of its own, copy its
   entries into the stable section: the stable notes cover everything since the
